@@ -1,9 +1,16 @@
 #!/usr/bin/env python3
 
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patheffects as path_effects
 import random
 import time
 
+
+
 DEBUG = True
+message_envoyee=[]
 
 def rand():
     return random.randint(0, 2147483647)
@@ -99,35 +106,26 @@ def encrypte(M, e, n):
 
 
 #/* dechiffrement */
-def decrypte(C, d_lg, n, clef):
+def decrypte(C, longueur_clef_binaire, n, clef):
     # pour l'exponentiation modulaire
     s = []
     R = []
-
-
     data_list = []
-
     s.append(1)
-    for i in range(d_lg):
+    for i in range(longueur_clef_binaire):
+        
+        temps = []
+        
         # *********** CALCUL DE TEMPS ****************
         start = time.perf_counter()
-
         repeat_count = 1000
         alea = rand()
         for j in range(repeat_count):
-            if clef[d_lg-1-i] == 1:
-                if alea < 2147483647/2:
-                    Ri = s[i]
-                else:
-                    for k in range(11):
-                        pass
+            if clef[longueur_clef_binaire-1-i] == 1:
+                
                 Ri = s[i] * C % n
             else:
-                if alea < 2147483647/2:
-                    Ri = s[i] * C % n
-                else:
-                    for k in range(11):
-                        pass
+           
                 Ri = s[i]
 
         # *********** CALCUL DE TEMPS ****************
@@ -137,12 +135,12 @@ def decrypte(C, d_lg, n, clef):
 
 
         tm = (end - start) * 1000000000 // repeat_count  # nanoseconds
+        
         # affichage du temps
         print("temps de l'iteration %d: %d nsec" % (i, tm))
 
         s.append((Ri * Ri) % n)
         data_list.append( (tm, i) )
-
     data_list.sort(key = lambda x: x[0])
 
     ecart = 0
@@ -152,7 +150,7 @@ def decrypte(C, d_lg, n, clef):
     j = 0
     for d in data_list:
         # hypothèse: il y a au moins environ 30% de zéros et de uns
-        if (j >= (d_lg/3)-1 and j <= d_lg-(d_lg/3) and
+        if (j >= (longueur_clef_binaire/3)-1 and j <= longueur_clef_binaire-(longueur_clef_binaire/3) and
            j+1 < len(data_list) and (data_list[j+1][0] - d[0]) > ecart):
             ecart = data_list[j+1][0] - d[0]
             ind_ecart = j
@@ -160,7 +158,6 @@ def decrypte(C, d_lg, n, clef):
             ecart_bis = data_list[j+1][0] - d[0]
             ind_ecart_bis = j
         j += 1
-
 
     # si l'ecart est nul
     if ecart == 0:
@@ -186,13 +183,33 @@ def decrypte(C, d_lg, n, clef):
         calcul[d[1]] += 1
 
     print("Clef estimee:\t ", end="")
-    for j in range(1, d_lg):
+    for j in range(1, longueur_clef_binaire):
         print(clef_estimee[j], end=" ")
 
-    M = R[d_lg - 1]
+    M = R[longueur_clef_binaire - 1]
     print("\tCaractere decrypte : %c" % M)
-
-
+    message_envoyee.append(M)
+    
+    k=len(data_list)
+    
+    moyen=0 
+    for i in range(k):
+        
+        moyen+=data_list[i][0]
+        
+        plt.plot(i, data_list[i][0],"o-") 
+       
+    moyen=moyen/k   
+    axe=np.linspace(-10,20,200)
+    plt.axis([-1, 20, 0, 6000])
+    p1=plt.plot([moyen for x in axe],label='Moyenne temporelle')
+    plt.title("Graphe du temps des iterations")
+   
+    plt.ylabel('Temps en nsec')
+    plt.xlabel("Les Iteration")
+    plt.show()  
+    moyen=0      
+        
 
 #/* Conversion de d en binaire */
 def convert(d):
@@ -244,37 +261,58 @@ def main():
         d += 1
 
     # affichage des clefs
-    print("\tClef publique\t: {%d,%d}" % (e, n))
-    print("\tClef privee\t: {%d,%d}" % (d, n))
+    print("\tClef publique\t: {%d,%d}" % (e, n),end="")
+    print("\t # {e,n}" ,end="")
+    print("\t ----- %d*%d=%d -----" % (p,q,n))
+    print("\tClef privee\t: {%d,%d}" % (d, n),end="")
+    print("\t # {d,n}" )
 
     clef = []  #[100];
 
     # conversion de la clef en binaire
-    d_lg, clef = convert(d)
+    longueur_clef_binaire, clef = convert(d)
     # recuperation du message a chiffrer
     print("\nEntrez le message a crypter:")
 
     # message a crypter
     pt = input()  # input() strips a trailing newline.
+    
+   
 
     code = [ encrypte(ord(m), e, n) for m in pt ]
+    
 
     print()
-
-    for c in code:
-        decrypte(c, d_lg, n, clef)
-
-    # affichage de la clef estimee
-    print("\tClef finale estimee:\t", end="")
-    for i in range(d_lg):
-        if calcul[i] > (len(pt)/2):
-            print("1", end="")
-        else:
-            print("0", end="")
-
-    print()
-    return 0
-
+    
+    
+    condition=int(input("Voulez vous vraiment decrypter le message ? (1 pour oui / 0 pour non) \n"))
+    
+    
+    if condition==1:
+        
+                    for c in code:
+                        decrypte(c, longueur_clef_binaire, n, clef)
+                
+                    # affichage de la clef estimee
+                    print("\tClef finale estimee:\t", end="")
+                    for i in range(longueur_clef_binaire):
+                        if calcul[i] > (len(pt)/2):
+                            print("1", end="")
+                        else:
+                            print("0", end="")
+                
+                    print()
+                    return 0
+    
 
 if __name__ == "__main__":
     main()
+
+
+message=""
+print( "votre message decrypté est --- ", end="")
+for k in message_envoyee:
+        print(chr(k),end="") 
+        message+=chr(k)
+print( " --- ")   
+
