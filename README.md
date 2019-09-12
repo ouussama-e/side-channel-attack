@@ -1,5 +1,5 @@
 # side-channel-attack
-A build from scratch simulation for time attack on RSA altgorithm using python (numpy,matplotlib)
+A build from scratch simulation for time attack on RSA algorithm using python (numpy,matplotlib)
 
 <img width="960" alt="matplotlib" src="https://user-images.githubusercontent.com/46606940/62466603-9766a580-b789-11e9-99b4-c928e8e13da2.PNG">
 
